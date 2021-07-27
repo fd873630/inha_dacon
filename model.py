@@ -209,7 +209,6 @@ class ResNet_Final(nn.Module):
 
 
     def forward(self, x):
-
         features = self.resnet_model(x)
         output = self.linear_model(features)
 

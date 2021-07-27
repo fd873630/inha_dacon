@@ -29,11 +29,6 @@ def model_train(model, train_loader, optimizer, criterion, scheduler, total_step
         inputs = inputs.to(device)
         labels = labels.to(device)
 
-        optimizer.zero_grad()
-
-        inputs, targets, inputs_lengths, targets_lengths = data
-        total_num += sum(targets_lengths)
-
         output, features = model(inputs) 
                
         _, preds = torch.max(output, 1)
@@ -69,7 +64,6 @@ def main():
 
     gpu_num = torch.cuda.device_count()
     #-------------------------- Model Initialize --------------------------
-    #Prediction Network
     num_classes = 86876 
 
     res_model = ResNet(IRBlock, [3, 4, 6, 3], use_se=False, im_size=112)
@@ -97,11 +91,12 @@ def main():
     
     #-------------------------- Data load --------------------------
     #train dataset
+    #자기 파일 path
     train_dataset = MS1MDataset('train', "/home/jhjeong/jiho_deep/inha_dacon/inha_data/ID_List.txt")
-    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=gpu_num * 4)
+    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=gpu_num * 4)
 
     print(" ")
-    print("las_only 를 학습합니다.")
+    print("학습시작")
     print(" ")
 
     pre_test_cer = 100000
