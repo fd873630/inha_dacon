@@ -39,7 +39,7 @@ class MS1MDataset(Dataset):
         self.labels = []
         self.transformer = data_transforms['train']
         
-        self.data_path = id_list_path.split("ID_List.txt")[0]
+        self.data_path = id_list_path.split(split)[0]
 
         with open(self.file_list) as f:
             files = f.read().splitlines()
@@ -49,7 +49,6 @@ class MS1MDataset(Dataset):
 
             image = fi[1] 
             image = self.data_path + image
-
             label = int(fi[0]) - 44165 # min 값
          
             self.images.append(image)

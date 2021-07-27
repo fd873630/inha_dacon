@@ -128,48 +128,44 @@ def main():
     #-------------------------- Data load --------------------------
     #train dataset
     #자기 파일 path
-    train_dataset = MS1MDataset('train', "/home/jhjeong/jiho_deep/inha_dacon/inha_data/ID_List.txt")
-    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=True, num_workers=gpu_num * 4)
+    train_dataset = MS1MDataset('train', "./inha_data/train.txt")
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=True, num_workers=gpu_num * 4)
+
+    test_dataset = MS1MDataset('test', "./inha_data/test.txt")
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=512, shuffle=False, num_workers=gpu_num * 4)
 
     print(" ")
     print("학습시작")
     print(" ")
 
-    pre_test_cer = 100000
+    pre_test_acc = 0
     pre_test_loss = 100000
     total_step = 0
     for epoch in range(0, 10000):
         print('{} 학습 시작'.format(datetime.datetime.now()))
         train_time = time.time()
-        epoch_loss, epoch_acc = model_train(model, dataloader, optimizer, criterion, scheduler, total_step, device)
+        epoch_loss, epoch_acc = model_train(model, test_dataloader, optimizer, criterion, scheduler, total_step, device)
         train_total_time = time.time() - train_time
         print('{} Epoch {} (Training) Loss {:.4f}, ACC {:.2f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, epoch_loss, epoch_acc, train_total_time))
         
-        '''
-        #eval은 나중에
         print('{} 평가 시작'.format(datetime.datetime.now()))
         eval_time = time.time()
-        val_loss, test_cer = model_eval(las_model, val_loader, las_criterion, device)
+        test_epoch_loss, test_epoch_acc = model_eval(model, test_dataloader, criterion, device)
         eval_total_time = time.time() - eval_time
-        print('{} Epoch {} (val) Loss {:.4f}, CER {:.2f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, val_loss, test_cer, eval_total_time))
-        '''
-
-        '''
-        #모델 저장도 나중에
-        if pre_test_loss > val_loss:
+        print('{} Epoch {} (eval) Loss {:.4f}, ACC {:.2f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, test_epoch_loss, test_epoch_acc, eval_total_time))
+        
+        if test_epoch_acc > pre_test_acc:
             print("best model을 저장하였습니다.")
             if gpu_num > 1:
                 torch.save(model.module.state_dict(), "./pth_file/model_best.pth")
             else:
                 torch.save(model.state_dict(), "./pth_file/model_best.pth")
-            pre_test_loss = val_loss
+            pre_test_acc = test_epoch_acc
 
         if gpu_num > 1:
             torch.save(model.module.state_dict(), "./pth_file/model_" + str(epoch) + ".pth")
         else:
             torch.save(model.state_dict(), "./pth_file/model_" + str(epoch) + ".pth")
-        '''        
-
 
 if __name__ == '__main__':
     main()
