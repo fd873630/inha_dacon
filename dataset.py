@@ -10,7 +10,6 @@ import pandas as pd
 
 from PIL import Image
 
-
 import cv2
 
 import torch
@@ -51,7 +50,8 @@ class MS1MDataset(Dataset):
             image = fi[1] 
             image = self.data_path + image
 
-            label = int(fi[0])
+            label = int(fi[0]) - 44165 # min 값
+         
             self.images.append(image)
             self.labels.append(label)
             
