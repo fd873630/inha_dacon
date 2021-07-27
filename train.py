@@ -38,12 +38,14 @@ def model_train(model, train_loader, optimizer, criterion, scheduler, total_step
 
         loss.backward()
         optimizer.step()
-        #scheduler.step()
+        scheduler.step()
 
-        if i % 500 == 0:
-            #lr = scheduler.get_lr()[0]
+        if i % 300 == 0:
+            lr = scheduler.get_lr()[0]
+            '''
             for param_group in optimizer.param_groups: 
                 lr = param_group['lr']
+            '''
             print('{} lr: {:7f}, train_batch: {:4d}/{:4d}, loss: {:.4f}, acc: {:.4f}, time: {:.2f}'
                   .format(datetime.datetime.now(), lr, i, total_batch_num, loss.item(), torch.sum(preds == labels.data).item() / batch_size, time.time() - start_time))
             start_time = time.time()
@@ -55,7 +57,6 @@ def model_train(model, train_loader, optimizer, criterion, scheduler, total_step
     epoch_acc = running_corrects / (total_batch_num)
     
     return epoch_loss, epoch_acc
-
 
 def model_eval(model, test_loader, criterion, device):
     model.eval()
@@ -106,7 +107,7 @@ def main():
     net = nn.Sequential(nn.Linear(512, num_classes))
 
     model = ResNet_Final(res_model, net)
-    model.load_state_dict(torch.load("./pth_file/model_0.pth"))
+    model.load_state_dict(torch.load("./pth_file/model_best.pth"))
     model = model.to(device)
     #-------------------------- Loss & Optimizer --------------------------
     criterion = nn.CrossEntropyLoss()
@@ -116,10 +117,9 @@ def main():
         model = nn.DataParallel(model).to(device)
         optimizer = optim.Adam(model.module.parameters(), lr=0.001)
 
-        #lr_lambda = lambda x: x/1000 if x < 1000 else (1 if x < 20000 else (x / 20000) ** -0.5 )
-        #scheduler = LambdaLR(optimizer, lr_lambda)
-        scheduler = 0
-
+        lr_lambda = lambda x: 1 if x < 1000 else (x / 1000) ** -0.5
+        scheduler = LambdaLR(optimizer, lr_lambda)
+        
     else:
         optimizer = optim.Adam(model.parameters(), lr=0.001)
         
@@ -147,13 +147,13 @@ def main():
         train_time = time.time()
         epoch_loss, epoch_acc = model_train(model, train_dataloader, optimizer, criterion, scheduler, total_step, device)
         train_total_time = time.time() - train_time
-        print('{} Epoch {} (Training) Loss {:.4f}, ACC {:.2f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, epoch_loss, epoch_acc, train_total_time))
+        print('{} Epoch {} (Training) Loss {:.4f}, ACC {:.4f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, epoch_loss, epoch_acc, train_total_time))
         
         print('{} 평가 시작'.format(datetime.datetime.now()))
         eval_time = time.time()
         test_epoch_loss, test_epoch_acc = model_eval(model, test_dataloader, criterion, device)
         eval_total_time = time.time() - eval_time
-        print('{} Epoch {} (eval) Loss {:.4f}, ACC {:.2f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, test_epoch_loss, test_epoch_acc, eval_total_time))
+        print('{} Epoch {} (eval) Loss {:.4f}, ACC {:.4f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, test_epoch_loss, test_epoch_acc, eval_total_time))
         
         
         if test_epoch_acc > pre_test_acc:
