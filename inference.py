@@ -29,7 +29,8 @@ def infer():
     net = nn.Sequential(nn.Linear(512, num_classes))
 
     model = ResNet_Final(res_model, net)
-
+    model.load_state_dict(torch.load("./pth_file/model_best.pth"))
+    model = model.to(device)
 
     #data 불러오기
     submission = pd.read_csv("./inha_data/sample_submission.csv")
@@ -69,7 +70,7 @@ def infer():
             i = i * batch_size
             tmp_left_input = left_test[i:i+batch_size]
             #print(tmp_input.size()) # torch.Size([1000, 3, 112, 112])
-            left_infer_result = model(tmp_left_input.to(device))
+            _, left_infer_result = model(tmp_left_input.to(device))
             #print(left_infer_result.size()) # torch.Size([1000, 512])
             left_infer_result_list.append(left_infer_result)
 
@@ -78,7 +79,7 @@ def infer():
     #오른쪽 이미지 
     right_test = list()
     for right_test_path in right_test_paths:
-        img = Image.open("test 폴더 경로 지정" + right_test_path + '.jpg').convert("RGB") # 경로 설정 유의 (ex. inha/test)
+        img = Image.open("/home/jhjeong/jiho_deep/inha_dacon/inha_data/test/" + right_test_path + '.jpg').convert("RGB") # 경로 설정 유의 (ex. inha/test)
         img = data_transform(img)# 이미지 데이터 전처리
         right_test.append(img)
     right_test = torch.stack(right_test)
@@ -94,7 +95,7 @@ def infer():
             i = i * batch_size
             tmp_right_input = right_test[i:i+batch_size]
             #print(tmp_input.size()) # torch.Size([1000, 3, 112, 112])
-            right_infer_result = model(tmp_right_input.to(device))
+            _, right_infer_result = model(tmp_right_input.to(device))
             #print(left_infer_result.size()) # torch.Size([1000, 512])
             right_infer_result_list.append(right_infer_result)
 
@@ -103,8 +104,6 @@ def infer():
 
     cosin_similarity = cos_sim(left_infer_result_list, right_infer_result_list)
     
-
-
     # 최종
     submission = pd.read_csv("./inha_data/sample_submission.csv") 
     submission['answer'] = cosin_similarity.tolist()

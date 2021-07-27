@@ -48,11 +48,11 @@ def model_train(model, train_loader, optimizer, criterion, scheduler, total_step
                   .format(datetime.datetime.now(), lr, i, total_batch_num, loss.item(), torch.sum(preds == labels.data).item() / batch_size, time.time() - start_time))
             start_time = time.time()
 
-        running_loss += loss.item() * inputs.size(0)
-        running_corrects += torch.sum(preds == labels.data)
+        running_loss += loss.item()
+        running_corrects += torch.sum(preds == labels.data).item() / batch_size
         
-    epoch_loss = running_loss / total_batch_num
-    epoch_acc = running_corrects.double() / total_batch_num
+    epoch_loss = running_loss / (total_batch_num)
+    epoch_acc = running_corrects / (total_batch_num)
     
     return epoch_loss, epoch_acc
 
@@ -74,16 +74,18 @@ def model_eval(model, test_loader, criterion, device):
             inputs = inputs.to(device)
             labels = labels.to(device)
 
+            batch_size = inputs.size(0)
+
             output, features = model(inputs) 
                 
             _, preds = torch.max(output, 1)
             loss = criterion(output, labels)
 
-            running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(preds == labels.data)
-            
-    epoch_loss = running_loss / total_batch_num
-    epoch_acc = running_corrects.double() / total_batch_num
+            running_loss += loss.item()
+            running_corrects += torch.sum(preds == labels.data).item() / batch_size
+        
+    epoch_loss = running_loss / (total_batch_num)
+    epoch_acc = running_corrects / (total_batch_num)
     
     return epoch_loss, epoch_acc
 
@@ -104,7 +106,7 @@ def main():
     net = nn.Sequential(nn.Linear(512, num_classes))
 
     model = ResNet_Final(res_model, net)
-
+    model.load_state_dict(torch.load("./pth_file/model_0.pth"))
     model = model.to(device)
     #-------------------------- Loss & Optimizer --------------------------
     criterion = nn.CrossEntropyLoss()
@@ -153,6 +155,7 @@ def main():
         eval_total_time = time.time() - eval_time
         print('{} Epoch {} (eval) Loss {:.4f}, ACC {:.2f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, test_epoch_loss, test_epoch_acc, eval_total_time))
         
+        
         if test_epoch_acc > pre_test_acc:
             print("best model을 저장하였습니다.")
             if gpu_num > 1:
@@ -165,6 +168,6 @@ def main():
             torch.save(model.module.state_dict(), "./pth_file/model_" + str(epoch) + ".pth")
         else:
             torch.save(model.state_dict(), "./pth_file/model_" + str(epoch) + ".pth")
-
+        
 if __name__ == '__main__':
     main()
