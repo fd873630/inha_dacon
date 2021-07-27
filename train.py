@@ -12,7 +12,6 @@ from torch.optim.lr_scheduler import LambdaLR
 from dataset import MS1MDataset
 from model import ResNet, IRBlock, ResNet_Final
 
-
 def model_train(model, train_loader, optimizer, criterion, scheduler, total_step, device):
     model.train()
 
@@ -144,7 +143,7 @@ def main():
     for epoch in range(0, 10000):
         print('{} 학습 시작'.format(datetime.datetime.now()))
         train_time = time.time()
-        epoch_loss, epoch_acc = model_train(model, test_dataloader, optimizer, criterion, scheduler, total_step, device)
+        epoch_loss, epoch_acc = model_train(model, train_dataloader, optimizer, criterion, scheduler, total_step, device)
         train_total_time = time.time() - train_time
         print('{} Epoch {} (Training) Loss {:.4f}, ACC {:.2f}, time: {:.2f}'.format(datetime.datetime.now(), epoch+1, epoch_loss, epoch_acc, train_total_time))
         
